@@ -1,20 +1,16 @@
-import { supabase } from '../config/supabase.js';
+import { FIXTURES } from '../data/mockData.js';
 import { ok } from '../utils/response.js';
 
 export async function list(req, res) {
   const { gw, status } = req.query;
+  let fixtures = [...FIXTURES];
 
-  let q = supabase.from('fixtures').select(`*, gameweeks!inner(number, name)`).order('match_date').order('match_time');
-  if (gw)     q = q.eq('gameweeks.number', parseInt(gw));
-  if (status) q = q.eq('status', status.toUpperCase());
+  if (gw)     fixtures = fixtures.filter(f => f.gameweeks.number === parseInt(gw));
+  if (status) fixtures = fixtures.filter(f => f.status === status.toUpperCase());
 
-  const { data, error } = await q;
-  if (error) throw error;
-  return res.json(ok(data));
+  return res.json(ok(fixtures));
 }
 
 export async function live(req, res) {
-  const { data, error } = await supabase.from('fixtures').select('*, gameweeks(number, name)').eq('status', 'LIVE');
-  if (error) throw error;
-  return res.json(ok(data));
+  return res.json(ok(FIXTURES.filter(f => f.status === 'LIVE')));
 }
