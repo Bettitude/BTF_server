@@ -8,7 +8,7 @@ const app = express();
 
 // ─── CORS ──────────────────────────────────────────────────────
 app.use(cors({
-  origin: [env.CLIENT_URL, env.ADMIN_URL, 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:4000'],
+  origin: [env.CLIENT_URL, env.ADMIN_URL, 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:4000', 'https://bt-fantasy-games.vercel.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
