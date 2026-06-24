@@ -1,0 +1,28 @@
+import { Router } from 'express';
+import authRoutes      from './auth.routes.js';
+import playerRoutes    from './players.routes.js';
+import squadRoutes     from './squad.routes.js';
+import fixtureRoutes   from './fixtures.routes.js';
+import gameweekRoutes  from './gameweeks.routes.js';
+import leagueRoutes    from './leagues.routes.js';
+import pointsRoutes    from './points.routes.js';
+import adminRoutes     from './admin.routes.js';
+import sportsApiRoutes from './sportsApi.routes.js';
+import chatRoutes      from './chat.routes.js';
+import searchRoutes    from './search.routes.js';
+import notifRoutes     from './notifications.routes.js';
+
+const router = Router();
+router.use('/auth',          authRoutes);
+router.use('/players',       playerRoutes);
+router.use('/squad',         squadRoutes);
+router.use('/fixtures',      fixtureRoutes);
+router.use('/gameweeks',     gameweekRoutes);
+router.use('/leagues',       leagueRoutes);
+router.use('/points',        pointsRoutes);
+router.use('/admin',         adminRoutes);
+router.use('/sports',        sportsApiRoutes);
+router.use('/chat',          chatRoutes);
+router.use('/search',        searchRoutes);
+router.use('/notifications', notifRoutes);
+export default router;

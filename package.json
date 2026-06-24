@@ -1,0 +1,16 @@
+{
+  "name": "fantasy-arena-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "@google/genai": "^2.4.0",
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}

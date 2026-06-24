@@ -1,0 +1,67 @@
+export const GAMEWEEKS = [
+  { number: 1, name: 'Group Stage — GW1', deadline: '2026-06-14T10:00:00Z', is_current: true,  is_finished: false },
+  { number: 2, name: 'Group Stage — GW2', deadline: '2026-06-20T10:00:00Z', is_current: false, is_finished: false },
+  { number: 3, name: 'Group Stage — GW3', deadline: '2026-06-24T10:00:00Z', is_current: false, is_finished: false },
+];
+
+export const PLAYERS = [
+  // GK
+  { id:'wg1', name:'Emiliano Martínez', country:'ARG', position:'GK', price_fc:9500000,  total_pts:184, form:7.8, selection_pct:41.2, weekly_pts:[8,12,10,7,9,11,6,13] },
+  { id:'wg2', name:'Alisson Becker',    country:'BRA', position:'GK', price_fc:9000000,  total_pts:171, form:7.2, selection_pct:32.5, weekly_pts:[9,7,11,8,6,10,9,8]  },
+  { id:'wg3', name:'Thibaut Courtois',  country:'BEL', position:'GK', price_fc:8500000,  total_pts:158, form:6.9, selection_pct:27.8, weekly_pts:[6,10,8,9,5,8,7,10]  },
+  { id:'wg4', name:'Jordan Pickford',   country:'ENG', position:'GK', price_fc:8000000,  total_pts:142, form:6.4, selection_pct:21.3, weekly_pts:[7,9,6,11,7,5,8,6]   },
+  { id:'wg5', name:'Manuel Neuer',      country:'GER', position:'GK', price_fc:8500000,  total_pts:155, form:6.8, selection_pct:19.4, weekly_pts:[8,6,9,7,10,6,7,8]   },
+  { id:'wg6', name:'Mike Maignan',      country:'FRA', position:'GK', price_fc:7500000,  total_pts:138, form:6.2, selection_pct:15.0, weekly_pts:[5,8,7,6,9,5,7,6]    },
+  // DF
+  { id:'wd1',  name:'Achraf Hakimi',    country:'MAR', position:'DF', price_fc:12000000, total_pts:198, form:8.4, selection_pct:55.3, weekly_pts:[12,8,11,9,10,13,10,11] },
+  { id:'wd2',  name:'Virgil van Dijk',  country:'NED', position:'DF', price_fc:11500000, total_pts:185, form:7.9, selection_pct:48.2, weekly_pts:[11,8,10,9,8,11,9,10]  },
+  { id:'wd3',  name:'Marquinhos',       country:'BRA', position:'DF', price_fc:11000000, total_pts:174, form:7.5, selection_pct:39.1, weekly_pts:[8,10,9,10,7,9,8,11]  },
+  { id:'wd4',  name:'William Saliba',   country:'FRA', position:'DF', price_fc:10500000, total_pts:168, form:7.2, selection_pct:33.8, weekly_pts:[9,11,7,8,9,10,7,9]   },
+  { id:'wd5',  name:'Alphonso Davies',  country:'CAN', position:'DF', price_fc:10000000, total_pts:161, form:6.9, selection_pct:28.5, weekly_pts:[8,11,9,7,10,8,9,7]   },
+  { id:'wd6',  name:'Antonio Rüdiger', country:'GER', position:'DF', price_fc:9500000,  total_pts:155, form:6.7, selection_pct:25.2, weekly_pts:[7,8,9,10,6,8,9,7]    },
+  { id:'wd7',  name:'Ronald Araújo',   country:'URU', position:'DF', price_fc:9500000,  total_pts:148, form:6.5, selection_pct:21.8, weekly_pts:[8,4,9,7,10,8,6,9]    },
+  { id:'wd8',  name:'Dani Carvajal',   country:'ESP', position:'DF', price_fc:9000000,  total_pts:162, form:7.0, selection_pct:30.4, weekly_pts:[10,8,9,7,8,11,8,9]   },
+  { id:'wd9',  name:'Kyle Walker',      country:'ENG', position:'DF', price_fc:8500000,  total_pts:144, form:6.3, selection_pct:18.9, weekly_pts:[7,8,6,9,8,7,6,8]     },
+  { id:'wd10', name:'Reece James',      country:'ENG', position:'DF', price_fc:8000000,  total_pts:132, form:5.9, selection_pct:14.2, weekly_pts:[6,7,8,5,9,6,7,5]     },
+  { id:'wd11', name:'Theo Hernández',  country:'FRA', position:'DF', price_fc:10000000, total_pts:165, form:7.1, selection_pct:32.0, weekly_pts:[9,7,10,8,9,11,7,9]   },
+  { id:'wd12', name:'Alejandro Balde', country:'ESP', position:'DF', price_fc:8000000,  total_pts:141, form:6.2, selection_pct:17.5, weekly_pts:[7,6,8,7,8,6,8,7]     },
+  // MF
+  { id:'wm1',  name:'Jude Bellingham',  country:'ENG', position:'MF', price_fc:16000000, total_pts:245, form:9.2, selection_pct:72.4, weekly_pts:[18,14,19,15,16,21,18,20] },
+  { id:'wm2',  name:'Kevin De Bruyne',  country:'BEL', position:'MF', price_fc:15500000, total_pts:238, form:8.9, selection_pct:64.8, weekly_pts:[21,15,18,19,11,20,17,18] },
+  { id:'wm3',  name:'Bukayo Saka',      country:'ENG', position:'MF', price_fc:14500000, total_pts:228, form:8.6, selection_pct:60.1, weekly_pts:[17,13,16,18,11,19,15,17] },
+  { id:'wm4',  name:'Jamal Musiala',    country:'GER', position:'MF', price_fc:14000000, total_pts:221, form:8.3, selection_pct:55.7, weekly_pts:[13,16,15,12,16,14,18,15] },
+  { id:'wm5',  name:'Rodri',            country:'ESP', position:'MF', price_fc:14500000, total_pts:218, form:8.2, selection_pct:52.3, weekly_pts:[11,14,12,13,13,15,11,14] },
+  { id:'wm6',  name:'Bruno Fernandes',  country:'POR', position:'MF', price_fc:13500000, total_pts:205, form:7.8, selection_pct:44.9, weekly_pts:[14,18,12,20,14,11,17,13] },
+  { id:'wm7',  name:'Pedri',            country:'ESP', position:'MF', price_fc:13000000, total_pts:198, form:7.6, selection_pct:41.2, weekly_pts:[12,14,13,11,15,13,14,13] },
+  { id:'wm8',  name:'Luka Modrić',     country:'CRO', position:'MF', price_fc:12500000, total_pts:189, form:7.3, selection_pct:35.8, weekly_pts:[10,12,9,11,12,11,13,11] },
+  { id:'wm9',  name:'Gavi',             country:'ESP', position:'MF', price_fc:12000000, total_pts:182, form:7.1, selection_pct:30.5, weekly_pts:[11,12,13,10,12,11,12,10] },
+  { id:'wm10', name:'Federico Valverde',country:'URU', position:'MF', price_fc:12000000, total_pts:185, form:7.2, selection_pct:32.1, weekly_pts:[12,10,13,11,12,13,10,12] },
+  { id:'wm11', name:'Declan Rice',      country:'ENG', position:'MF', price_fc:11500000, total_pts:174, form:6.9, selection_pct:26.8, weekly_pts:[10,11,9,12,10,11,9,10]  },
+  { id:'wm12', name:'Eduardo Camavinga',country:'FRA', position:'MF', price_fc:11000000, total_pts:168, form:6.7, selection_pct:22.4, weekly_pts:[9,11,10,8,12,10,8,11]   },
+  // FW
+  { id:'wf1',  name:'Kylian Mbappé',    country:'FRA', position:'FW', price_fc:20000000, total_pts:312, form:9.8, selection_pct:84.5, weekly_pts:[24,18,23,20,22,28,20,24] },
+  { id:'wf2',  name:'Erling Haaland',   country:'NOR', position:'FW', price_fc:18500000, total_pts:298, form:9.5, selection_pct:78.2, weekly_pts:[28,19,24,20,17,25,21,22] },
+  { id:'wf3',  name:'Lionel Messi',     country:'ARG', position:'FW', price_fc:17000000, total_pts:284, form:9.1, selection_pct:71.6, weekly_pts:[22,25,17,19,19,20,21,22] },
+  { id:'wf4',  name:'Vinicius Jr',      country:'BRA', position:'FW', price_fc:16500000, total_pts:271, form:8.8, selection_pct:65.3, weekly_pts:[20,17,22,18,21,19,20,18] },
+  { id:'wf5',  name:'Harry Kane',       country:'ENG', position:'FW', price_fc:15500000, total_pts:258, form:8.5, selection_pct:58.9, weekly_pts:[16,21,17,18,19,22,18,20] },
+  { id:'wf6',  name:'Mohamed Salah',    country:'EGY', position:'FW', price_fc:15000000, total_pts:252, form:8.3, selection_pct:53.7, weekly_pts:[19,15,21,17,16,20,19,18] },
+  { id:'wf7',  name:'Phil Foden',       country:'ENG', position:'FW', price_fc:13500000, total_pts:234, form:8.0, selection_pct:46.2, weekly_pts:[15,16,14,18,17,19,16,17] },
+  { id:'wf8',  name:'Antoine Griezmann',country:'FRA', position:'FW', price_fc:13500000, total_pts:228, form:7.8, selection_pct:41.0, weekly_pts:[15,13,16,12,15,16,14,16] },
+  { id:'wf9',  name:'Cristiano Ronaldo',country:'POR', position:'FW', price_fc:12500000, total_pts:215, form:7.5, selection_pct:38.4, weekly_pts:[12,16,14,18,13,16,14,15] },
+  { id:'wf10', name:'Bernardo Silva',   country:'POR', position:'FW', price_fc:13000000, total_pts:222, form:7.7, selection_pct:39.8, weekly_pts:[14,13,15,12,16,14,13,15] },
+  { id:'wf11', name:'Marcus Rashford',  country:'ENG', position:'FW', price_fc:11500000, total_pts:198, form:7.1, selection_pct:29.6, weekly_pts:[13,10,14,11,15,12,11,14] },
+  { id:'wf12', name:'Lamine Yamal',     country:'ESP', position:'FW', price_fc:14000000, total_pts:241, form:8.2, selection_pct:50.3, weekly_pts:[16,14,17,15,16,18,14,17] },
+];
+
+export const FIXTURES = [
+  { id:'f1',  gameweek_number:1, home:'France',    home_code:'FRA', away:'Argentina', away_code:'ARG', match_date:'2026-06-14', match_time:'21:00', venue:'MetLife Stadium, NJ',    status:'NS', home_score:null, away_score:null },
+  { id:'f2',  gameweek_number:1, home:'England',   home_code:'ENG', away:'Germany',   away_code:'GER', match_date:'2026-06-14', match_time:'18:00', venue:'AT&T Stadium, Dallas',   status:'NS', home_score:null, away_score:null },
+  { id:'f3',  gameweek_number:1, home:'Brazil',    home_code:'BRA', away:'Spain',     away_code:'ESP', match_date:'2026-06-15', match_time:'20:00', venue:'Rose Bowl, Pasadena',    status:'NS', home_score:null, away_score:null },
+  { id:'f4',  gameweek_number:1, home:'Portugal',  home_code:'POR', away:'Belgium',   away_code:'BEL', match_date:'2026-06-15', match_time:'17:00', venue:'SoFi Stadium, LA',       status:'NS', home_score:null, away_score:null },
+  { id:'f5',  gameweek_number:1, home:'Morocco',   home_code:'MAR', away:'Croatia',   away_code:'CRO', match_date:'2026-06-16', match_time:'21:00', venue:"Levi's Stadium, SF",     status:'NS', home_score:null, away_score:null },
+  { id:'f6',  gameweek_number:1, home:'USA',       home_code:'USA', away:'Mexico',    away_code:'MEX', match_date:'2026-06-16', match_time:'18:00', venue:'MetLife Stadium, NJ',    status:'NS', home_score:null, away_score:null },
+  { id:'f7',  gameweek_number:2, home:'Argentina', home_code:'ARG', away:'Morocco',   away_code:'MAR', match_date:'2026-06-20', match_time:'21:00', venue:'Mercedes-Benz, Atlanta', status:'NS', home_score:null, away_score:null },
+  { id:'f8',  gameweek_number:2, home:'Germany',   home_code:'GER', away:'Brazil',    away_code:'BRA', match_date:'2026-06-20', match_time:'18:00', venue:'Arrowhead, Kansas City', status:'NS', home_score:null, away_score:null },
+  { id:'f9',  gameweek_number:2, home:'Spain',     home_code:'ESP', away:'England',   away_code:'ENG', match_date:'2026-06-21', match_time:'20:00', venue:'Hard Rock, Miami',       status:'NS', home_score:null, away_score:null },
+  { id:'f10', gameweek_number:2, home:'Belgium',   home_code:'BEL', away:'France',    away_code:'FRA', match_date:'2026-06-21', match_time:'17:00', venue:'NRG Stadium, Houston',   status:'NS', home_score:null, away_score:null },
+];
