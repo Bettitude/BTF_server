@@ -1,25 +1,17 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-const REQUIRED = [
-  'SUPABASE_URL',
-  'SUPABASE_SERVICE_KEY',
-];
-
-const missing = REQUIRED.filter(k => !process.env[k]);
-if (missing.length > 0) {
-  console.error(`\n[ENV ERROR] Missing required environment variables:\n  ${missing.join('\n  ')}\n`);
-  console.error('Copy .env.example to .env and fill in all values.\n');
-  process.exit(1);
-}
+// Supabase is no longer required to boot — gameplay data lives in the in-memory
+// runtime store (see store/runtimeStore.js). Only the admin tooling still touches
+// Supabase, and it's fine for that to be unconfigured.
 
 export const env = {
   PORT:                   parseInt(process.env.PORT || '3001', 10),
   NODE_ENV:               process.env.NODE_ENV || 'development',
 
-  // Supabase
-  SUPABASE_URL:           process.env.SUPABASE_URL,
-  SUPABASE_SERVICE_KEY:   process.env.SUPABASE_SERVICE_KEY,
+  // Supabase (admin tooling only — placeholder keeps the client from throwing on boot)
+  SUPABASE_URL:           process.env.SUPABASE_URL || 'https://placeholder.supabase.co',
+  SUPABASE_SERVICE_KEY:   process.env.SUPABASE_SERVICE_KEY || 'placeholder',
   SUPABASE_ANON_KEY:      process.env.SUPABASE_ANON_KEY || '',
 
   // Sports data APIs
