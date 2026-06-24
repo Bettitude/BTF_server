@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --watch index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "echo \"no build step needed\""
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
