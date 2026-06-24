@@ -32,23 +32,49 @@ const VENUES = [
 ];
 
 // ─── Marquee names so the pool isn't all generated filler ──────────────────
+// Each star is tagged with its real position so it lands in the matching slot.
 const STAR_NAMES = {
-  ARG: ['Lionel Messi', 'Julián Álvarez'],
-  FRA: ['Kylian Mbappé', 'Antoine Griezmann'],
-  BRA: ['Vinícius Júnior', 'Neymar Jr.'],
-  ENG: ['Jude Bellingham', 'Bukayo Saka'],
-  POR: ['Cristiano Ronaldo', 'Bruno Fernandes'],
-  BEL: ['Kevin De Bruyne', 'Romelu Lukaku'],
-  NOR: ['Erling Haaland'],
-  EGY: ['Mohamed Salah'],
-  ESP: ['Rodri', 'Pedri'],
-  NED: ['Virgil van Dijk', 'Jamal Musiala'],
-  CRO: ['Luka Modrić'],
-  GER: ['Manuel Neuer'],
+  ARG: [{ name: 'Lionel Messi', pos: 'FW' }, { name: 'Julián Álvarez', pos: 'FW' }],
+  FRA: [{ name: 'Kylian Mbappé', pos: 'FW' }, { name: 'Antoine Griezmann', pos: 'FW' }],
+  BRA: [{ name: 'Vinícius Júnior', pos: 'FW' }, { name: 'Neymar Jr.', pos: 'FW' }],
+  ENG: [{ name: 'Jude Bellingham', pos: 'MF' }, { name: 'Bukayo Saka', pos: 'MF' }],
+  POR: [{ name: 'Cristiano Ronaldo', pos: 'FW' }, { name: 'Bruno Fernandes', pos: 'MF' }],
+  BEL: [{ name: 'Kevin De Bruyne', pos: 'MF' }, { name: 'Romelu Lukaku', pos: 'FW' }],
+  NOR: [{ name: 'Erling Haaland', pos: 'FW' }],
+  EGY: [{ name: 'Mohamed Salah', pos: 'FW' }],
+  ESP: [{ name: 'Rodri', pos: 'MF' }, { name: 'Pedri', pos: 'MF' }],
+  NED: [{ name: 'Virgil van Dijk', pos: 'DF' }, { name: 'Jamal Musiala', pos: 'MF' }],
+  CRO: [{ name: 'Luka Modrić', pos: 'MF' }],
+  GER: [{ name: 'Manuel Neuer', pos: 'GK' }],
 };
 
 const FIRST_NAMES = ['Carlos', 'Luis', 'Diego', 'Marco', 'Jan', 'Erik', 'Lucas', 'Mateo', 'Hugo', 'Tom', 'Sam', 'Leo', 'Noah', 'Adam', 'Omar', 'Yusuf', 'Kenji', 'Haruto', 'Felix', 'Ivan', 'Pavel', 'Stefan', 'Marcus', 'Andre', 'Bruno', 'Rafael', 'Pedro', 'Joao', 'Karim', 'Said', 'Viktor', 'Dario'];
 const LAST_NAMES  = ['Silva', 'Garcia', 'Müller', 'Rossi', 'Janssen', 'Olsen', 'Costa', 'Fernandez', 'Novak', 'Smith', 'Johnson', 'Dubois', 'Haddad', 'Nakamura', 'Park', 'Kim', 'Popov', 'Andersson', 'Larsen', 'Mendes', 'Santos', 'Almeida', 'Hassan', 'Saleh', 'Diallo', 'Toure', 'Ahmed', 'Khan', 'Berg', 'Lindqvist'];
+
+// Wikipedia article titles that don't match the display name directly (disambiguation pages etc.)
+const WIKI_TITLE_OVERRIDES = {
+  'Neymar Jr.': 'Neymar',
+  'Rodri':      'Rodri_(footballer,_born_1996)',
+  'Bruno Fernandes': 'Bruno_Fernandes_(footballer,_born_1994)',
+};
+
+// Looks up a real photo for known stars via Wikipedia's REST summary API.
+// Falls back silently (caller keeps the generated avatar) on any failure.
+async function fetchWikipediaPhoto(name) {
+  const title = WIKI_TITLE_OVERRIDES[name] || name.replace(/ /g, '_');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, { signal: controller.signal });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.thumbnail?.source || null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 function rnd(min, max) { return Math.random() * (max - min) + min; }
 function rndInt(min, max) { return Math.floor(rnd(min, max + 1)); }
@@ -99,7 +125,7 @@ function buildPlayer(id, name, position, country) {
 
 function generatePlayers() {
   const POSITIONS = [
-    ['GK', 1], ['DF', 2], ['MF', 2], ['FW', 1],
+    ['GK', 1], ['DF', 2], ['MF', 2], ['FW', 2],
   ];
   const players = [];
   let counter = 1;
@@ -108,12 +134,12 @@ function generatePlayers() {
     const stars = [...(STAR_NAMES[code] || [])];
     for (const [position, count] of POSITIONS) {
       for (let i = 0; i < count; i++) {
-        const name = (position === 'FW' || position === 'MF') && stars.length
-          ? stars.shift()
-          : `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`;
+        const starIdx = stars.findIndex(s => s.pos === position);
+        const star = starIdx !== -1 ? stars.splice(starIdx, 1)[0] : null;
+        const name = star ? star.name : `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`;
         const id = `p${counter++}`;
         const player = buildPlayer(id, name, position, code);
-        if (STAR_NAMES[code]?.includes(name)) {
+        if (star) {
           player.price_fc = Math.round(rnd(11, 18) * 10) * 100_000;
           player.selection_pct = Math.round(rnd(35, 70) * 10) / 10;
         }
@@ -125,6 +151,17 @@ function generatePlayers() {
 }
 
 export const PLAYERS = generatePlayers();
+
+// Upgrade marquee players from generated avatars to real photos in the background —
+// the server doesn't wait on this, players just get a nicer photo a few seconds after boot.
+const STAR_PLAYER_NAMES = new Set(Object.values(STAR_NAMES).flat().map(s => s.name));
+(async () => {
+  const stars = PLAYERS.filter(p => STAR_PLAYER_NAMES.has(p.name));
+  await Promise.all(stars.map(async p => {
+    const photo = await fetchWikipediaPhoto(p.name);
+    if (photo) p.photo = photo;
+  }));
+})();
 
 // ─── Gameweeks ──────────────────────────────────────────────────────────────
 export const GAMEWEEKS = [

@@ -1,33 +1,25 @@
-import { supabase } from '../config/supabase.js';
+import crypto from 'crypto';
+import * as store from '../store/runtimeStore.js';
 import { ok } from '../utils/response.js';
 
 export async function list(req, res) {
-  const { data, error } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('user_id', req.user.id)
-    .order('created_at', { ascending: false })
-    .limit(20);
-
-  if (error) throw error;
-  return res.json(ok(data ?? []));
+  const notifs = store.notifications.get(req.user.id) || [];
+  return res.json(ok(notifs.slice(0, 20)));
 }
 
 export async function markRead(req, res) {
-  const { error } = await supabase
-    .from('notifications')
-    .update({ is_read: true })
-    .eq('user_id', req.user.id)
-    .eq('is_read', false);
-
-  if (error) throw error;
+  const notifs = store.notifications.get(req.user.id) || [];
+  notifs.forEach(n => { n.is_read = true; });
   return res.json(ok({ marked: true }));
 }
 
 // Internal helper — call from other controllers to create a notification
-export async function createNotification(userId, type, message, link = null) {
-  await supabase
-    .from('notifications')
-    .insert({ user_id: userId, type, message, link })
-    .then(() => {});
+export function createNotification(userId, type, message, link = null) {
+  const notifs = store.notifications.get(userId) || [];
+  notifs.unshift({
+    id: `notif_${crypto.randomBytes(6).toString('hex')}`,
+    user_id: userId, type, message, link,
+    is_read: false, created_at: new Date().toISOString(),
+  });
+  store.notifications.set(userId, notifs);
 }
