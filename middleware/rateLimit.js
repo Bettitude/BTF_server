@@ -14,5 +14,5 @@ export const authLimiter = rateLimit({
   limit: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, error: 'Too many attempts, please try again later' },
+  message: { success: false, error: 'Too many sign-in attempts — please wait 15 minutes and try again.' },
 });

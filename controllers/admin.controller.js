@@ -142,7 +142,7 @@ export async function updatePlayerInjuryStatus(req, res) {
   const { playerId } = req.params;
   const { injuryStatus, injuryNote } = req.body;
   if (!['fit', 'doubtful', 'injured', 'suspended'].includes(injuryStatus)) {
-    return res.status(400).json({ success: false, error: 'Invalid injuryStatus' });
+    return res.status(400).json({ success: false, error: 'Invalid status — must be fit, doubtful, injured, or suspended.' });
   }
 
   const { data: player, error } = await supabase
