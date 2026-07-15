@@ -1,50 +1,44 @@
-import * as store from '../store/runtimeStore.js';
-import { PLAYERS, GAMEWEEKS } from '../data/mockData.js';
-import { calcFantasyPoints } from '../utils/scoring.js';
+import crypto from 'crypto';
+import { supabase } from '../config/supabase.js';
+import { computeUserPoints } from '../services/points.service.js';
 import { ok, created, notFound, badRequest } from '../utils/response.js';
-
-function computeUserPoints(userId) {
-  const squad = store.getSquad(userId);
-  if (!squad) return { total: 0, gwPts: 0 };
-
-  const currentGw = GAMEWEEKS.find(g => g.is_current) || GAMEWEEKS[GAMEWEEKS.length - 1];
-  const gwIndex = currentGw.number - 1;
-
-  let total = 0, gwPts = 0;
-  squad.playerIds.forEach(pid => {
-    const player = PLAYERS.find(p => p.id === pid);
-    if (!player) return;
-    const stats = player.player_gw_stats[gwIndex];
-    let seasonPts = player.total_pts;
-    let gwScore   = calcFantasyPoints(stats, player.position);
-    if (player.id === squad.captainId) { seasonPts *= 2; gwScore *= 2; }
-    else if (player.id === squad.vcId) { seasonPts = Math.round(seasonPts * 1.5); gwScore = Math.round(gwScore * 1.5); }
-    total += seasonPts;
-    gwPts += gwScore;
-  });
-  return { total, gwPts };
-}
+import { sendEventEmail } from '../services/email.service.js';
 
 export async function myLeagues(req, res) {
   const userId = req.user.id;
-  const userLeagues = store.leaguesForUser(userId);
+  const { data: memberships, error } = await supabase
+    .from('league_members')
+    .select('btff_leagues(*)')
+    .eq('user_id', userId);
+  if (error) throw error;
 
-  const result = userLeagues.map(l => {
-    const members = [...l.memberIds].map(id => ({ id, ...computeUserPoints(id) }))
-      .sort((a, b) => b.total - a.total);
-    const rank = members.findIndex(m => m.id === userId) + 1;
-    const me   = members.find(m => m.id === userId);
+  const results = [];
+  for (const { btff_leagues: league } of memberships || []) {
+    if (!league) continue;
+    const { data: members } = await supabase
+      .from('league_members')
+      .select('user_id, profiles(team_name)')
+      .eq('league_id', league.id);
 
-    return {
-      id: l.id, name: l.name, type: l.type, code: l.code,
-      created_by: l.created_by, created_at: l.created_at,
+    const ranked = (await Promise.all((members || []).map(async m => ({
+      userId: m.user_id,
+      name:   m.profiles?.team_name,
+      ...(await computeUserPoints(m.user_id)),
+    })))).sort((a, b) => b.total - a.total);
+
+    const rank = ranked.findIndex(m => m.userId === userId) + 1;
+    const me   = ranked.find(m => m.userId === userId);
+
+    results.push({
+      id: league.id, name: league.name, type: league.type, code: league.code,
+      created_by: league.created_by, created_at: league.created_at,
       myTotalPts: me?.total ?? 0,
       myGwPts:    me?.gwPts ?? 0,
       myRank:     rank || null,
-    };
-  });
+    });
+  }
 
-  return res.json(ok(result));
+  return res.json(ok(results));
 }
 
 export async function create(req, res) {
@@ -52,7 +46,20 @@ export async function create(req, res) {
   const { name, type = 'private' } = req.body;
   if (!name?.trim()) return res.status(400).json(badRequest('League name required'));
 
-  const league = store.createLeague(userId, name.trim(), type);
+  const code = type === 'private' ? `BTFF-${crypto.randomBytes(3).toString('hex').toUpperCase()}` : null;
+
+  const { data: league, error } = await supabase
+    .from('btff_leagues')
+    .insert({ name: name.trim(), type, code, created_by: userId })
+    .select()
+    .single();
+  if (error) throw error;
+
+  await supabase.from('league_members').insert({ league_id: league.id, user_id: userId });
+  await supabase.from('chat_rooms').insert({ type: 'league', name: league.name, league_id: league.id });
+
+  sendEventEmail(req.user.email, 'league_created', { leagueName: league.name, code: league.code });
+
   return res.status(201).json(created({ id: league.id, name: league.name, type: league.type, code: league.code }));
 }
 
@@ -61,39 +68,65 @@ export async function join(req, res) {
   const { code } = req.body;
   if (!code) return res.status(400).json(badRequest('League code required'));
 
-  const result = store.joinLeagueByCode(userId, code.trim());
-  if (result.error === 'not_found')      return res.status(404).json(notFound('League'));
-  if (result.error === 'already_member') return res.status(409).json(badRequest('Already a member'));
+  const { data: league } = await supabase.from('btff_leagues').select('*').eq('code', code.trim().toUpperCase()).maybeSingle();
+  if (!league) return res.status(404).json(notFound('League'));
 
-  return res.json(ok({ id: result.league.id, name: result.league.name, type: result.league.type, code: result.league.code }));
+  const { data: existing } = await supabase
+    .from('league_members')
+    .select('*')
+    .match({ league_id: league.id, user_id: userId })
+    .maybeSingle();
+  if (existing) return res.status(409).json(badRequest('Already a member'));
+
+  const { error } = await supabase.from('league_members').insert({ league_id: league.id, user_id: userId });
+  if (error) throw error;
+
+  sendEventEmail(req.user.email, 'league_joined', { leagueName: league.name });
+
+  return res.json(ok({ id: league.id, name: league.name, type: league.type, code: league.code }));
 }
 
 export async function standings(req, res) {
   const { id } = req.params;
-  const league = store.leagues.get(id);
+  const { data: league } = await supabase.from('btff_leagues').select('id, type').eq('id', id).maybeSingle();
   if (!league) return res.status(404).json(notFound('League'));
 
-  const rows = [...league.memberIds]
-    .map(uid => {
-      const user = store.users.get(uid);
-      return { userId: uid, name: user?.teamName || 'Unknown', ...computeUserPoints(uid) };
-    })
+  if (league.type !== 'public') {
+    const { data: membership } = await supabase
+      .from('league_members').select('user_id')
+      .match({ league_id: id, user_id: req.user.id }).maybeSingle();
+    if (!membership) return res.status(403).json(badRequest('Not a member of this league'));
+  }
+
+  const { data: members } = await supabase
+    .from('league_members')
+    .select('user_id, profiles(team_name)')
+    .eq('league_id', id);
+
+  const rows = (await Promise.all((members || []).map(async m => ({
+    userId: m.user_id,
+    name:   m.profiles?.team_name || 'Unknown',
+    ...(await computeUserPoints(m.user_id)),
+  }))))
     .sort((a, b) => b.total - a.total)
     .map((r, i) => ({ rank: i + 1, userId: r.userId, name: r.name, gwPts: r.gwPts, total: r.total }));
 
   return res.json(ok(rows));
 }
 
+// Overall leaderboard across every signed-up manager (FPL-style "Global" ranking) —
+// not tied to league membership.
 export async function globalLeague(req, res) {
-  const real = [...store.users.values()].map(u => ({
-    userId: u.id,
-    name:   u.teamName,
-    ...computeUserPoints(u.id),
-  }));
+  const { data: profiles, error } = await supabase.from('profiles').select('id, team_name');
+  if (error) throw error;
 
-  const combined = [...store.globalStandings, ...real]
+  const rows = (await Promise.all(profiles.map(async p => ({
+    userId: p.id,
+    name:   p.team_name || 'Unknown',
+    ...(await computeUserPoints(p.id)),
+  }))))
     .sort((a, b) => b.total - a.total)
-    .map((entry, i) => ({ rank: i + 1, userId: entry.userId, name: entry.name, gwPts: entry.gwPts, total: entry.total }));
+    .map((r, i) => ({ rank: i + 1, userId: r.userId, name: r.name, gwPts: r.gwPts, total: r.total }));
 
-  return res.json(ok(combined));
+  return res.json(ok(rows));
 }

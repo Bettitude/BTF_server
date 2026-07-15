@@ -8,5 +8,5 @@ router.get('/',              requireAuth, asyncHandler(leagues.myLeagues));
 router.post('/',             requireAuth, asyncHandler(leagues.create));
 router.post('/join',         requireAuth, asyncHandler(leagues.join));
 router.get('/global',        asyncHandler(leagues.globalLeague));
-router.get('/:id/standings', asyncHandler(leagues.standings));
+router.get('/:id/standings', requireAuth, asyncHandler(leagues.standings));
 export default router;

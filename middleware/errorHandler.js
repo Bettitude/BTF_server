@@ -8,9 +8,13 @@ export function errorHandler(err, req, res, next) {
   console.error(`[${new Date().toISOString()}] ${req.method} ${req.path} → ${status}`, err.message);
   if (isDev) console.error(err.stack);
 
+  // Unexpected (5xx) errors often carry raw DB internals (table/constraint names) in
+  // err.message — only surface that detail in development, never to a live client.
+  const safeMessage = (!isDev && status >= 500) ? 'Internal server error' : (err.message || 'Internal server error');
+
   res.status(status).json({
     success: false,
-    error: err.message || 'Internal server error',
+    error: safeMessage,
     ...(isDev && { stack: err.stack }),
   });
 }

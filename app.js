@@ -3,6 +3,7 @@ import cors from 'cors';
 import { env } from './config/env.js';
 import apiRoutes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { generalLimiter } from './middleware/rateLimit.js';
 
 const app = express();
 
@@ -13,6 +14,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+app.use('/api', generalLimiter);
 
 // ─── Body parsing ──────────────────────────────────────────────
 app.use(express.json({ limit: '1mb' }));

@@ -6,7 +6,10 @@ import * as chat from '../controllers/chat.controller.js';
 
 const router = Router();
 
-router.get('/',  requireAuth, asyncHandler(chat.list));
-router.post('/', requireAuth, requireFields('content'), asyncHandler(chat.send));
+router.get('/rooms',                    requireAuth, asyncHandler(chat.listRooms));
+router.post('/dm',                      requireAuth, requireFields('userId'),  asyncHandler(chat.startDm));
+router.get('/rooms/:roomId/messages',   requireAuth, asyncHandler(chat.listMessages));
+router.post('/rooms/:roomId/messages',  requireAuth, requireFields('content'), asyncHandler(chat.sendMessage));
+router.delete('/messages/:msgId',        requireAuth, asyncHandler(chat.deleteMessage));
 
 export default router;

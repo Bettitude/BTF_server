@@ -1,41 +1,121 @@
-import * as store from '../store/runtimeStore.js';
+import { supabase, supabaseAnon } from '../config/supabase.js';
 import { ok, created, badRequest } from '../utils/response.js';
+import { createNotification } from './notifications.controller.js';
+import { sendEventEmail } from '../services/email.service.js';
 
 export async function register(req, res) {
   const { email, password, teamName = 'My Team' } = req.body;
   if (!email || !password) return res.status(400).json(badRequest('Email and password required'));
-  if (store.findUserByEmail(email)) return res.status(409).json(badRequest('Email already registered'));
 
-  const user = store.createUser(email, password, teamName);
-  store.leagues.get(store.GLOBAL_LEAGUE_ID).memberIds.add(user.id);
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { team_name: teamName },
+  });
+  if (error) {
+    const status = error.message?.includes('already') ? 409 : 400;
+    return res.status(status).json(badRequest(error.message));
+  }
 
-  return res.status(201).json(created({ userId: user.id, email: user.email }));
+  await supabase.from('profiles').upsert({ id: data.user.id, team_name: teamName });
+  await createNotification(data.user.id, 'welcome', `Welcome to BT Fantasy Football, ${teamName}!`, '/build');
+  sendEventEmail(data.user.email, 'signup', { teamName });
+
+  return res.status(201).json(created({ userId: data.user.id, email: data.user.email }));
 }
 
 export async function login(req, res) {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json(badRequest('Email and password required'));
 
-  const user = store.findUserByEmail(email);
-  if (!user || !store.verifyPassword(user, password)) {
-    return res.status(401).json(badRequest('Invalid email or password'));
-  }
+  const { data, error } = await supabaseAnon.auth.signInWithPassword({ email, password });
+  if (error) return res.status(401).json(badRequest('Invalid email or password'));
 
-  const token = store.createSession(user.id);
+  const { data: profile } = await supabase.from('profiles').select('team_name').eq('id', data.user.id).single();
+
+  sendEventEmail(data.user.email, 'login', {
+    time: new Date().toUTCString(),
+  });
+
   return res.json(ok({
-    accessToken:  token,
-    refreshToken: token,
-    expiresAt:    Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7,
-    user:         store.publicUser(user),
+    accessToken:  data.session.access_token,
+    refreshToken: data.session.refresh_token,
+    expiresAt:    data.session.expires_at,
+    user: {
+      id:       data.user.id,
+      email:    data.user.email,
+      teamName: profile?.team_name || data.user.user_metadata?.team_name || 'My Team',
+      isAdmin:  data.user.user_metadata?.role === 'admin',
+    },
   }));
 }
 
 export async function me(req, res) {
-  return res.json(ok(store.publicUser(req.user)));
+  const { id, email, user_metadata } = req.user;
+  const { data: profile } = await supabase.from('profiles')
+    .select('team_name, payout_method, payout_account_name, payout_account_number, payout_bank_name')
+    .eq('id', id).single();
+  return res.json(ok({
+    id,
+    email,
+    teamName: profile?.team_name || user_metadata?.team_name || 'My Team',
+    isAdmin:  user_metadata?.role === 'admin',
+    payoutMethod:        profile?.payout_method        || '',
+    payoutAccountName:   profile?.payout_account_name   || '',
+    payoutAccountNumber: profile?.payout_account_number || '',
+    payoutBankName:      profile?.payout_bank_name      || '',
+  }));
 }
 
-export async function logout(req, res) {
-  const header = req.headers.authorization;
-  if (header?.startsWith('Bearer ')) store.sessions.delete(header.slice(7));
+export async function logout(_req, res) {
   return res.json(ok(null, { message: 'Logged out' }));
+}
+
+export async function updateProfile(req, res) {
+  const { teamName, payoutMethod, payoutAccountName, payoutAccountNumber, payoutBankName } = req.body;
+
+  const patch = {};
+  if (teamName !== undefined) {
+    if (!teamName.trim()) return res.status(400).json(badRequest('teamName cannot be empty'));
+    patch.team_name = teamName.trim();
+  }
+  if (payoutMethod        !== undefined) patch.payout_method         = payoutMethod?.trim()        || null;
+  if (payoutAccountName   !== undefined) patch.payout_account_name   = payoutAccountName?.trim()    || null;
+  if (payoutAccountNumber !== undefined) patch.payout_account_number = payoutAccountNumber?.trim()  || null;
+  if (payoutBankName      !== undefined) patch.payout_bank_name      = payoutBankName?.trim()       || null;
+
+  if (Object.keys(patch).length === 0) return res.status(400).json(badRequest('No fields to update'));
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(patch)
+    .eq('id', req.user.id)
+    .select('team_name, payout_method, payout_account_name, payout_account_number, payout_bank_name')
+    .single();
+  if (error) throw error;
+
+  const FIELD_LABELS = {
+    team_name: 'team name', payout_method: 'payout method', payout_account_name: 'payout account name',
+    payout_account_number: 'payout account number', payout_bank_name: 'payout bank',
+  };
+  sendEventEmail(req.user.email, 'profile_updated', {
+    fields: Object.keys(patch).map(k => FIELD_LABELS[k] || k).join(', '),
+  });
+
+  return res.json(ok({
+    id: req.user.id,
+    email: req.user.email,
+    teamName: data.team_name,
+    payoutMethod:        data.payout_method        || '',
+    payoutAccountName:   data.payout_account_name   || '',
+    payoutAccountNumber: data.payout_account_number || '',
+    payoutBankName:      data.payout_bank_name      || '',
+  }));
+}
+
+export async function closeAccount(req, res) {
+  const { error } = await supabase.auth.admin.deleteUser(req.user.id);
+  if (error) throw error;
+  return res.json(ok(null, { message: 'Account closed' }));
 }

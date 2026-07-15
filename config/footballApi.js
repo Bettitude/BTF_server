@@ -50,6 +50,10 @@ export const apiFootball = {
   playerStats: (playerId) =>
     `${APIFOOTBALL_BASE}/players?id=${playerId}&league=${WC_LEAGUE}&season=${WC_SEASON}`,
 
+  // Per-player match stats (incl. official match rating) for one fixture
+  fixturePlayers: (fixtureId) =>
+    `${APIFOOTBALL_BASE}/fixtures/players?fixture=${fixtureId}`,
+
   // Group standings
   standings: () =>
     `${APIFOOTBALL_BASE}/standings?league=${WC_LEAGUE}&season=${WC_SEASON}`,

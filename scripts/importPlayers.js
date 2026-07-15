@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import ws from 'ws';
+import { BASE_PRICE } from '../utils/playerValuation.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(__dirname, '../.env') });
@@ -21,18 +22,6 @@ const POS_MAP = {
   Midfielder: 'MF',
   Attacker:   'FW',
 };
-
-function assignPrice(position, number) {
-  const n = number || 23;
-  const tier = n <= 11 ? 0 : n <= 22 ? 1 : 2;
-  const PRICES = {
-    GK: [9_500_000, 8_000_000, 7_000_000],
-    DF: [12_000_000, 9_500_000, 7_500_000],
-    MF: [14_000_000, 11_000_000, 8_500_000],
-    FW: [13_500_000, 10_000_000, 8_000_000],
-  };
-  return PRICES[position]?.[tier] ?? 8_000_000;
-}
 
 async function apiFetch(url) {
   const res = await fetch(url, { headers: HEADERS });
@@ -61,7 +50,7 @@ async function run() {
           name:          p.name,
           country:       team.code,
           position,
-          price_fc:      assignPrice(position, p.number),
+          price_fc:      BASE_PRICE[position],
           total_pts:     0,
           form:          0,
           selection_pct: 0,
