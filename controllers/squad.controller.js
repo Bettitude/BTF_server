@@ -24,8 +24,8 @@ export async function getSquad(req, res) {
 export async function saveSquad(req, res) {
   const { name, formation, captainId, vcId, playerIds } = req.body;
 
-  if (!Array.isArray(playerIds)) return res.status(400).json(badRequest('playerIds array required'));
-  if (playerIds.length > 15) return res.status(400).json(badRequest('Maximum 15 players'));
+  if (!Array.isArray(playerIds)) return res.status(400).json(badRequest('Invalid squad data — please try saving again.'));
+  if (playerIds.length > 15) return res.status(400).json(badRequest('Your squad can\'t have more than 15 players.'));
 
   const { data: squad, error } = await supabase
     .from('squads')
@@ -72,7 +72,7 @@ export async function saveSquad(req, res) {
 
 export async function transfer(req, res) {
   const { playerInId, playerOutId } = req.body;
-  if (!playerInId || !playerOutId) return res.status(400).json(badRequest('playerInId and playerOutId required'));
+  if (!playerInId || !playerOutId) return res.status(400).json(badRequest('Please select both a player to add and a player to remove.'));
 
   const { data: squad } = await supabase.from('squads').select('id').eq('user_id', req.user.id).maybeSingle();
   if (!squad) return res.status(404).json(notFound('Squad'));

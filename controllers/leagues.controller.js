@@ -44,7 +44,7 @@ export async function myLeagues(req, res) {
 export async function create(req, res) {
   const userId = req.user.id;
   const { name, type = 'private' } = req.body;
-  if (!name?.trim()) return res.status(400).json(badRequest('League name required'));
+  if (!name?.trim()) return res.status(400).json(badRequest('Please enter a name for your league.'));
 
   const code = type === 'private' ? `BTFF-${crypto.randomBytes(3).toString('hex').toUpperCase()}` : null;
 
@@ -66,17 +66,17 @@ export async function create(req, res) {
 export async function join(req, res) {
   const userId = req.user.id;
   const { code } = req.body;
-  if (!code) return res.status(400).json(badRequest('League code required'));
+  if (!code) return res.status(400).json(badRequest('Please enter the league code.'));
 
   const { data: league } = await supabase.from('btff_leagues').select('*').eq('code', code.trim().toUpperCase()).maybeSingle();
-  if (!league) return res.status(404).json(notFound('League'));
+  if (!league) return res.status(404).json(badRequest('No league found with that code — double-check and try again.'));
 
   const { data: existing } = await supabase
     .from('league_members')
     .select('*')
     .match({ league_id: league.id, user_id: userId })
     .maybeSingle();
-  if (existing) return res.status(409).json(badRequest('Already a member'));
+  if (existing) return res.status(409).json(badRequest("You're already a member of this league."));
 
   const { error } = await supabase.from('league_members').insert({ league_id: league.id, user_id: userId });
   if (error) throw error;
@@ -95,7 +95,7 @@ export async function standings(req, res) {
     const { data: membership } = await supabase
       .from('league_members').select('user_id')
       .match({ league_id: id, user_id: req.user.id }).maybeSingle();
-    if (!membership) return res.status(403).json(badRequest('Not a member of this league'));
+    if (!membership) return res.status(403).json(badRequest("You need to join this league before you can view its standings."));
   }
 
   const { data: members } = await supabase

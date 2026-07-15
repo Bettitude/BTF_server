@@ -5,7 +5,7 @@ import { sendEventEmail } from '../services/email.service.js';
 
 export async function register(req, res) {
   const { email, password, teamName = 'My Team' } = req.body;
-  if (!email || !password) return res.status(400).json(badRequest('Email and password required'));
+  if (!email || !password) return res.status(400).json(badRequest('Please enter your email and password.'));
 
   const { data, error } = await supabase.auth.admin.createUser({
     email,
@@ -14,8 +14,12 @@ export async function register(req, res) {
     user_metadata: { team_name: teamName },
   });
   if (error) {
-    const status = error.message?.includes('already') ? 409 : 400;
-    return res.status(status).json(badRequest(error.message));
+    const isExisting = error.message?.toLowerCase().includes('already');
+    const status = isExisting ? 409 : 400;
+    const msg = isExisting
+      ? 'An account with this email already exists — try signing in instead.'
+      : 'We couldn\'t create your account. Please check your details and try again.';
+    return res.status(status).json(badRequest(msg));
   }
 
   await supabase.from('profiles').upsert({ id: data.user.id, team_name: teamName });
@@ -27,10 +31,10 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json(badRequest('Email and password required'));
+  if (!email || !password) return res.status(400).json(badRequest('Please enter your email and password.'));
 
   const { data, error } = await supabaseAnon.auth.signInWithPassword({ email, password });
-  if (error) return res.status(401).json(badRequest('Invalid email or password'));
+  if (error) return res.status(401).json(badRequest('Incorrect email or password — please try again.'));
 
   const { data: profile } = await supabase.from('profiles').select('team_name').eq('id', data.user.id).single();
 
@@ -77,7 +81,7 @@ export async function updateProfile(req, res) {
 
   const patch = {};
   if (teamName !== undefined) {
-    if (!teamName.trim()) return res.status(400).json(badRequest('teamName cannot be empty'));
+    if (!teamName.trim()) return res.status(400).json(badRequest('Team name can\'t be empty.'));
     patch.team_name = teamName.trim();
   }
   if (payoutMethod        !== undefined) patch.payout_method         = payoutMethod?.trim()        || null;
@@ -85,7 +89,7 @@ export async function updateProfile(req, res) {
   if (payoutAccountNumber !== undefined) patch.payout_account_number = payoutAccountNumber?.trim()  || null;
   if (payoutBankName      !== undefined) patch.payout_bank_name      = payoutBankName?.trim()       || null;
 
-  if (Object.keys(patch).length === 0) return res.status(400).json(badRequest('No fields to update'));
+  if (Object.keys(patch).length === 0) return res.status(400).json(badRequest('Nothing to update — make a change first.'));
 
   const { data, error } = await supabase
     .from('profiles')
